@@ -1,0 +1,34 @@
+{
+    // ============================================================
+    //  STM32F407IGHx / chuankou9.26 工程 VSCode 工作区设置
+    // ============================================================
+
+    // ---------- 1. 工具链环境（最关键的一步） ----------
+    // 从 Dock / 访达 启动的 VSCode 不会加载 ~/.zshrc，
+    // 因此 arm-none-eabi-* 不在 PATH 里会直接报 "arm-none-eabi-gcc: not found"。
+    // 这里显式把 xpack 工具链和 Homebrew（cmake/ninja/openocd）注入进去。
+    "terminal.integrated.env.osx": {
+        "PATH": "/Users/yujinzhao/Documents/xpack-arm-none-eabi-gcc-13.3.1-1.1/bin:/opt/homebrew/bin:${env:PATH}"
+    },
+
+    // ---------- 2. CMake Tools ----------
+    // always：强制使用工程根目录的 CMakePresets.json（Debug / Release）
+    "cmake.useCMakePresets": "always",
+    "cmake.configureOnOpen": true,
+    "cmake.environment": {
+        "PATH": "/Users/yujinzhao/Documents/xpack-arm-none-eabi-gcc-13.3.1-1.1/bin:/opt/homebrew/bin:${env:PATH}"
+    },
+
+    // ---------- 3. 文件视图 ----------
+    "files.associations": {
+        "*.ioc": "ini"
+    },
+    "files.exclude": {
+        "**/build": false
+    },
+    "search.exclude": {
+        "**/build": true,
+        "**/.git": true
+    },
+    "C_Cpp.debugShortcut": false
+}

@@ -1,0 +1,198 @@
+{
+    // ============================================================
+    //  构建 / 烧录 任务（Ctrl+Shift+B 触发默认任务）
+    //  调试器：ST-Link V2 / V2-1 / V3  →  OpenOCD + interface/stlink.cfg
+    //  依赖链：1-CMake 配置 → 2-编译 → 3-烧录
+    // ============================================================
+    "version": "2.0.0",
+
+    // 所有任务统一的工作目录与工具链 PATH
+    "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+            "PATH": "/Users/yujinzhao/Documents/xpack-arm-none-eabi-gcc-13.3.1-1.1/bin:/opt/homebrew/bin:${env:PATH}"
+        }
+    },
+    "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true,
+        "close": true
+    },
+
+    "tasks": [
+        // ---------------- 1. 生成构建系统 ----------------
+        {
+            "label": "1-CMake 配置 (Debug)",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--preset",
+                "Debug"
+            ],
+            "problemMatcher": []
+        },
+
+        // ---------------- 2. 编译 ----------------
+        {
+            "label": "2-编译 (Debug)",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "${workspaceFolder}/build/Debug",
+                "--parallel"
+            ],
+            "dependsOn": [
+                "1-CMake 配置 (Debug)"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "detail": "增量编译，产物：build/Debug/chuankou9.26.elf"
+        },
+
+        // ---------------- 2b. 全量重编 ----------------
+        {
+            "label": "2b-清理并重新编译 (Debug)",
+            "type": "shell",
+            "command": "cmake --build \"${workspaceFolder}/build/Debug\" --target clean && cmake --build \"${workspaceFolder}/build/Debug\" --parallel",
+            "dependsOn": [
+                "1-CMake 配置 (Debug)"
+            ],
+            "group": "build",
+            "problemMatcher": [
+                "$gcc"
+            ]
+        },
+
+        // ---------------- 3. 烧录 ----------------
+        // 先编译，再用 OpenOCD 下载 .elf、校验并复位运行。
+        // 若芯片因程序改动了 SWD 引脚而连不上，改用任务「3c-烧录（复位模式）」。
+        {
+            "label": "3-烧录 (ST-Link)",
+            "type": "shell",
+            "command": "openocd",
+            "args": [
+                "-f",
+                "interface/stlink.cfg",
+                "-f",
+                "target/stm32f4x.cfg",
+                "-c",
+                "program \"${workspaceFolder}/build/Debug/chuankou9.26.elf\" verify reset exit"
+            ],
+            "dependsOn": [
+                "2-编译 (Debug)"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "problemMatcher": [],
+            "detail": "编译 + 烧录 + 校验 + 复位运行"
+        },
+        {
+            "label": "3b-仅烧录不重编 (ST-Link)",
+            "type": "shell",
+            "command": "openocd",
+            "args": [
+                "-f",
+                "interface/stlink.cfg",
+                "-f",
+                "target/stm32f4x.cfg",
+                "-c",
+                "program \"${workspaceFolder}/build/Debug/chuankou9.26.elf\" verify reset exit"
+            ],
+            "problemMatcher": [],
+            "detail": "直接用现有 .elf 烧录，不触发编译"
+        },
+        {
+            "label": "3c-烧录（复位模式，连不上时用）",
+            "type": "shell",
+            "command": "openocd",
+            "args": [
+                "-f",
+                "interface/stlink.cfg",
+                "-f",
+                "target/stm32f4x.cfg",
+                "-c",
+                "reset_config srst_only srst_nogate",
+                "-c",
+                "program \"${workspaceFolder}/build/Debug/chuankou9.26.elf\" verify reset exit"
+            ],
+            "dependsOn": [
+                "2-编译 (Debug)"
+            ],
+            "problemMatcher": [],
+            "detail": "程序占用了 SWD 引脚时，用硬件复位方式连接"
+        },
+
+        // ---------------- 4. 擦除 ----------------
+        {
+            "label": "4-擦除整片 Flash (ST-Link)",
+            "type": "shell",
+            "command": "openocd",
+            "args": [
+                "-f",
+                "interface/stlink.cfg",
+                "-f",
+                "target/stm32f4x.cfg",
+                "-c",
+                "init; reset halt; stm32f4x mass_erase 0; reset run; exit"
+            ],
+            "problemMatcher": [],
+            "detail": "慎用：整片 Flash 全部擦除"
+        },
+
+        // ---------------- 5. 复位 ----------------
+        {
+            "label": "5-复位运行 (ST-Link)",
+            "type": "shell",
+            "command": "openocd",
+            "args": [
+                "-f",
+                "interface/stlink.cfg",
+                "-f",
+                "target/stm32f4x.cfg",
+                "-c",
+                "init; reset run; exit"
+            ],
+            "problemMatcher": []
+        },
+
+        // ---------------- 6. 诊断 ----------------
+        {
+            "label": "6-检测 ST-Link 连接",
+            "type": "shell",
+            "command": "openocd",
+            "args": [
+                "-f",
+                "interface/stlink.cfg",
+                "-f",
+                "target/stm32f4x.cfg",
+                "-c",
+                "init; targets; exit"
+            ],
+            "problemMatcher": [],
+            "detail": "连不上时先跑这个，区分是探头问题还是固件问题"
+        },
+
+        // ---------------- 工具 ----------------
+        {
+            "label": "工具-查看固件大小",
+            "type": "shell",
+            "command": "arm-none-eabi-size \"${workspaceFolder}/build/Debug/chuankou9.26.elf\"",
+            "problemMatcher": []
+        },
+        {
+            "label": "工具-生成 Intel Hex",
+            "type": "shell",
+            "command": "arm-none-eabi-objcopy -O ihex \"${workspaceFolder}/build/Debug/chuankou9.26.elf\" \"${workspaceFolder}/build/Debug/chuankou9.26.hex\"",
+            "problemMatcher": []
+        }
+    ]
+}

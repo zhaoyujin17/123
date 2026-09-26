@@ -1,0 +1,56 @@
+# ============================================================
+#  STM32CubeMX + CMake 工程 .gitignore
+# ============================================================
+
+# ---------- 构建输出 ----------
+build/
+cmake-build-*/
+out/
+
+# ---------- 编译 / 链接产物 ----------
+*.o
+*.obj
+*.a
+*.elf
+*.bin
+*.hex
+*.map
+*.lst
+*.su
+*.d
+*.i
+*.syms
+
+# ---------- CMake 中间文件 ----------
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+compile_commands.json
+.ninja_deps
+.ninja_log
+build.ninja
+rules.ninja
+
+# ---------- 调试器配置（本地私有）----------
+*.launch
+.settings/
+*.svd
+*.svd.gz
+openocd.log
+
+# ---------- IDE / 编辑器 ----------
+.vscode/*.log
+.vscode/ipch/
+*.swp
+*~
+
+# ---------- macOS ----------
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# ---------- 说明 ----------
+# .vscode/ 故意保留在版本控制中（tasks.json / launch.json 是工程的一部分）。
+# 注意：其中的工具链为绝对路径（xpack arm-none-eabi、Homebrew openocd），
+# 换机器后需要相应修改 settings.json 与 tasks.json 里的 PATH。

@@ -1,0 +1,75 @@
+{
+    // ============================================================
+    //  调试配置（F5 启动）
+    //  调试器：ST-Link V2 / V2-1 / V3
+    //  依赖插件：Cortex-Debug (marus25.cortex-debug) + OpenOCD
+    //  按 F5 会自动先编译、再烧录，并停在 main 函数
+    // ============================================================
+    "version": "0.2.0",
+    "configurations": [
+        // ---------- 芯片型号：STM32F407IGHx ----------
+        {
+            "name": "调试 (ST-Link)",
+            "type": "cortex-debug",
+            "request": "launch",
+            "servertype": "openocd",
+            "serverpath": "/opt/homebrew/bin/openocd",
+            "cwd": "${workspaceFolder}",
+
+            // 待调试的固件（由任务「2-编译」产出）
+            "executable": "${workspaceFolder}/build/Debug/chuankou9.26.elf",
+
+            // 用 armToolchainPath 指到 bin 目录，Cortex-Debug 会在这里找
+            // arm-none-eabi-gdb / objdump / nm
+            "armToolchainPath": "/Users/yujinzhao/Documents/xpack-arm-none-eabi-gcc-13.3.1-1.1/bin",
+
+            "device": "STM32F407IG",
+
+            // OpenOCD 脚本：stlink.cfg 自动识别 V1/V2/V2-1/V3
+            "configFiles": [
+                "interface/stlink.cfg",
+                "target/stm32f4x.cfg"
+            ],
+
+            // 先跑编译任务，再进入调试
+            "preLaunchTask": "2-编译 (Debug)",
+
+            // 停在 main 而不是停在启动汇编
+            "runToEntryPoint": "main",
+
+            "liveWatch": {
+                "enabled": true,
+                "samplesPerSecond": 20
+            }
+
+            // 换芯片时取消下面两行注释、并替换为自己芯片的 SVD 文件，
+            // 即可在 XPERIPHERALS 窗口查看寄存器
+            // "svdFile": "${workspaceFolder}/STM32F407.svd"
+        },
+
+        // ---------- 附加到已在运行的芯片（不改动 Flash）----------
+        {
+            "name": "附加 (ST-Link)",
+            "type": "cortex-debug",
+            "request": "attach",
+            "servertype": "openocd",
+            "serverpath": "/opt/homebrew/bin/openocd",
+            "cwd": "${workspaceFolder}",
+            "executable": "${workspaceFolder}/build/Debug/chuankou9.26.elf",
+            "armToolchainPath": "/Users/yujinzhao/Documents/xpack-arm-none-eabi-gcc-13.3.1-1.1/bin",
+            "device": "STM32F407IG",
+            "configFiles": [
+                "interface/stlink.cfg",
+                "target/stm32f4x.cfg"
+            ],
+            "liveWatch": {
+                "enabled": true,
+                "samplesPerSecond": 20
+            }
+        }
+        // 提示：烧录时若报 "open failed" 或连不上芯片，说明程序改动了
+        // SWD 引脚（PA13/PA14）。此时用任务「3c-烧录（复位模式）」，
+        // 或先在 launch 配置里加一行：
+        // "openOCDPreConfigLaunchCommands": ["reset_config srst_only srst_nogate"]
+    ]
+}
